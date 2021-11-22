@@ -6,7 +6,7 @@ require (
 	github.com/mattn/go-colorable v0.1.7 // indirect
 	github.com/shirou/gopsutil v3.21.5+incompatible
 	github.com/stretchr/testify v1.7.0
-	github.com/testcontainers/testcontainers-go v0.11.1
+	github.com/testcontainers/testcontainers-go v0.12.0
 	go.opentelemetry.io/collector v0.29.1-0.20210702192737-aaa6d7d6b859
 	go.opentelemetry.io/collector/model v0.0.0-00010101000000-000000000000
 	go.uber.org/atomic v1.8.0
