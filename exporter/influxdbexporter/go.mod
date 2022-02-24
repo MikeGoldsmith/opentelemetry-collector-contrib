@@ -3,12 +3,12 @@ module github.com/open-telemetry/opentelemetry-collector-contrib/exporter/influx
 go 1.16
 
 require (
-	github.com/influxdata/influxdb-observability/common v0.1.0
+	github.com/influxdata/influxdb-observability/common v0.2.4
 	github.com/influxdata/influxdb-observability/otel2influx v0.1.0
 	github.com/influxdata/line-protocol/v2 v2.0.0-20210428091617-0567a5134992
 	github.com/stretchr/testify v1.7.0
 	go.opentelemetry.io/collector v0.29.1-0.20210702192737-aaa6d7d6b859
-	go.opentelemetry.io/collector/model v0.0.0-00010101000000-000000000000
+	go.opentelemetry.io/collector/model v0.0.0-20210723184018-3b7d6ce4830c
 	go.uber.org/zap v1.18.1
 )
 
