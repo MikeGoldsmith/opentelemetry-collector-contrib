@@ -15,8 +15,8 @@ require (
 	go.opentelemetry.io/collector v0.45.1-0.20220223001941-c9c253193a75
 	go.opentelemetry.io/collector/model v0.45.1-0.20220222185228-27f7607ca13a
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.29.0
-	go.opentelemetry.io/otel v1.4.1
-	go.opentelemetry.io/otel/trace v1.4.1
+	go.opentelemetry.io/otel v1.5.0
+	go.opentelemetry.io/otel/trace v1.5.0
 	google.golang.org/grpc v1.44.0
 	google.golang.org/protobuf v1.27.1
 )
