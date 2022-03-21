@@ -12,7 +12,7 @@ require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/internal/aws/metrics v0.45.1
 	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/resourcetotelemetry v0.45.1
 	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/translator/opencensus v0.45.1
-	github.com/stretchr/testify v1.7.0
+	github.com/stretchr/testify v1.7.1
 	go.opentelemetry.io/collector v0.45.1-0.20220223001941-c9c253193a75
 	go.opentelemetry.io/collector/model v0.45.1-0.20220222185228-27f7607ca13a
 	go.uber.org/zap v1.21.0
