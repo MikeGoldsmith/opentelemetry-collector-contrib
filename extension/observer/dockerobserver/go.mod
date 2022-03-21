@@ -9,7 +9,7 @@ require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/internal/common v0.45.1
 	github.com/open-telemetry/opentelemetry-collector-contrib/internal/containertest v0.45.1
 	github.com/open-telemetry/opentelemetry-collector-contrib/internal/docker v0.45.1
-	github.com/stretchr/testify v1.7.0
+	github.com/stretchr/testify v1.7.1
 	go.opentelemetry.io/collector v0.45.1-0.20220223001941-c9c253193a75
 	go.uber.org/zap v1.21.0
 
