@@ -7,7 +7,7 @@ require (
 	go.opentelemetry.io/collector v0.45.1-0.20220223001941-c9c253193a75
 	go.uber.org/zap v1.21.0
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8
-	google.golang.org/grpc v1.44.0
+	google.golang.org/grpc v1.51.0
 )
 
 require (
@@ -39,7 +39,7 @@ require (
 	go.opentelemetry.io/otel/metric v0.27.0 // indirect
 	go.opentelemetry.io/otel/trace v1.4.1 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
-	golang.org/x/net v0.0.0-20210813160813-60bc85c4be6d // indirect
+	golang.org/x/net v0.0.0-20220722155237-a158d28d115b // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/protobuf v1.27.1 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
