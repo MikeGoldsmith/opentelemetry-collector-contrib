@@ -6,7 +6,7 @@ require (
 	github.com/influxdata/influxdb-observability/common v0.2.10
 	github.com/influxdata/influxdb-observability/otel2influx v0.2.10
 	github.com/influxdata/line-protocol/v2 v2.2.1
-	github.com/stretchr/testify v1.7.0
+	github.com/stretchr/testify v1.9.0
 	go.opentelemetry.io/collector v0.45.1-0.20220223001941-c9c253193a75
 	go.opentelemetry.io/collector/model v0.45.1-0.20220222185228-27f7607ca13a
 	go.uber.org/zap v1.21.0
@@ -46,5 +46,5 @@ require (
 	google.golang.org/grpc v1.44.0 // indirect
 	google.golang.org/protobuf v1.27.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
