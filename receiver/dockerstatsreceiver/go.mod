@@ -6,7 +6,7 @@ require (
 	github.com/docker/docker v20.10.12+incompatible
 	github.com/open-telemetry/opentelemetry-collector-contrib/internal/containertest v0.45.1
 	github.com/open-telemetry/opentelemetry-collector-contrib/internal/docker v0.45.1
-	github.com/stretchr/testify v1.7.0
+	github.com/stretchr/testify v1.9.0
 	go.opentelemetry.io/collector v0.45.1-0.20220223001941-c9c253193a75
 	go.opentelemetry.io/collector/model v0.45.1-0.20220222185228-27f7607ca13a
 	go.uber.org/zap v1.21.0
@@ -53,7 +53,7 @@ require (
 	google.golang.org/protobuf v1.27.1 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
 replace github.com/open-telemetry/opentelemetry-collector-contrib/internal/containertest => ../../internal/containertest
