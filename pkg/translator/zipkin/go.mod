@@ -11,7 +11,7 @@ require (
 	github.com/openzipkin/zipkin-go v0.4.0
 	github.com/stretchr/testify v1.7.0
 	go.opentelemetry.io/collector/model v0.45.1-0.20220222185228-27f7607ca13a
-	google.golang.org/protobuf v1.27.1
+	google.golang.org/protobuf v1.33.0
 
 )
 
