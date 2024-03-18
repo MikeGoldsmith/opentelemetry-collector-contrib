@@ -11,7 +11,7 @@ require (
 	go.opentelemetry.io/otel v1.4.1
 	go.uber.org/multierr v1.7.0
 	go.uber.org/zap v1.21.0
-	gonum.org/v1/gonum v0.9.3
+	gonum.org/v1/gonum v0.15.0
 )
 
 require (
@@ -34,8 +34,7 @@ require (
 	go.opentelemetry.io/otel/sdk v1.4.1 // indirect
 	go.opentelemetry.io/otel/trace v1.4.1 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
-	golang.org/x/exp v0.0.0-20200224162631-6cc2880d07d6 // indirect
-	golang.org/x/sys v0.0.0-20220114195835-da31bd327af9 // indirect
+	golang.org/x/sys v0.14.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 )
