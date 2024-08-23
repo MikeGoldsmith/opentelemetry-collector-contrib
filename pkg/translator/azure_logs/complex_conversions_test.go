@@ -1,8 +1,9 @@
 package azure_logs
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestFrontDoorAccessLogSecurityProtocol(t *testing.T) {
@@ -21,7 +22,7 @@ func TestFrontDoorAccessLogSecurityProtocol(t *testing.T) {
 }
 
 func TestAzureCDNAccessLogSecurityProtocol(t *testing.T) {
-	f, ok := tryGetComplexConversion("AzureCDNAccessLog", "SecurityProtocol")
+	f, ok := tryGetComplexConversion("AzureCdnAccessLog", "SecurityProtocol")
 	assert.True(t, ok)
 	attrs := map[string]any{}
 	ok = f("SecurityProtocol", "TLS 1.2", attrs)
