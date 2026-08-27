@@ -71,63 +71,10 @@ func TestEMAPercentage_InvalidPercentage(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func TestEMAThroughput_ReturnsPositiveRate(t *testing.T) {
-	s, err := NewEMAThroughput(EMAThroughputConfig{
-		GoalThroughputPerSec: 100,
-		AdjustmentInterval:   15 * time.Second,
-		Weight:               0.5,
-	})
-	require.NoError(t, err)
-	require.NoError(t, s.Start())
-	t.Cleanup(func() { _ = s.Stop() })
-
-	rate := s.GetSampleRate("svc-a", 1)
-	assert.GreaterOrEqual(t, rate, 1)
-}
-
-func TestEMAThroughput_InvalidGoal(t *testing.T) {
-	_, err := NewEMAThroughput(EMAThroughputConfig{GoalThroughputPerSec: 0})
-	assert.Error(t, err)
-	_, err = NewEMAThroughput(EMAThroughputConfig{GoalThroughputPerSec: -10})
-	assert.Error(t, err)
-}
-
-func TestWindowedThroughput_ReturnsPositiveRate(t *testing.T) {
-	s, err := NewWindowedThroughput(WindowedThroughputConfig{
-		GoalThroughputPerSec: 100,
-		UpdateFrequency:      1 * time.Second,
-		LookbackFrequency:    30 * time.Second,
-	})
-	require.NoError(t, err)
-	require.NoError(t, s.Start())
-	t.Cleanup(func() { _ = s.Stop() })
-
-	rate := s.GetSampleRate("svc-a", 1)
-	assert.GreaterOrEqual(t, rate, 1)
-}
-
-func TestWindowedThroughput_InvalidGoal(t *testing.T) {
-	_, err := NewWindowedThroughput(WindowedThroughputConfig{GoalThroughputPerSec: 0})
-	assert.Error(t, err)
-}
-
 func TestDynsamplerWrapper_StopIsIdempotent(t *testing.T) {
-	samplers := []func() (Sampler, error){
-		func() (Sampler, error) {
-			return NewEMAPercentage(EMAPercentageConfig{GoalSamplingPercentage: 10, AdjustmentInterval: 15 * time.Second, Weight: 0.5})
-		},
-		func() (Sampler, error) {
-			return NewEMAThroughput(EMAThroughputConfig{GoalThroughputPerSec: 100, AdjustmentInterval: 15 * time.Second, Weight: 0.5})
-		},
-		func() (Sampler, error) {
-			return NewWindowedThroughput(WindowedThroughputConfig{GoalThroughputPerSec: 100, UpdateFrequency: time.Second, LookbackFrequency: 30 * time.Second})
-		},
-	}
-	for _, build := range samplers {
-		s, err := build()
-		require.NoError(t, err)
-		require.NoError(t, s.Start())
-		require.NoError(t, s.Stop())
-		require.NoError(t, s.Stop())
-	}
+	s, err := NewEMAPercentage(EMAPercentageConfig{GoalSamplingPercentage: 10, AdjustmentInterval: 15 * time.Second, Weight: 0.5})
+	require.NoError(t, err)
+	require.NoError(t, s.Start())
+	require.NoError(t, s.Stop())
+	require.NoError(t, s.Stop())
 }

@@ -274,6 +274,26 @@ type SamplerConfig struct {
 	// Used by: adaptive_throughput (algorithm: windowed).
 	LookbackFrequency time.Duration `mapstructure:"lookback_frequency"`
 
+	// SharedCounters publishes the sampler's per-interval traffic counts to a
+	// sampler-state extension shared by multiple collector instances, making
+	// GoalThroughput the combined budget for the fleet instead of a
+	// per-instance budget. Unset, counts stay in process and GoalThroughput
+	// is per-instance.
+	// Used by: adaptive_throughput.
+	SharedCounters *SharedCountersConfig `mapstructure:"shared_counters"`
+
+	// prevent unkeyed literal initialization
+	_ struct{}
+}
+
+// SharedCountersConfig connects an adaptive_throughput sampler to a
+// sampler-state extension that merges traffic counts across collector
+// instances.
+type SharedCountersConfig struct {
+	// Extension is the component ID of the sampler-state extension to publish
+	// counts to and read merged counts from. The extension must implement the
+	// counter-store interface (AddCounts/ReadCounts). Required.
+	Extension component.ID `mapstructure:"extension"`
 	// prevent unkeyed literal initialization
 	_ struct{}
 }
@@ -455,6 +475,9 @@ func (s *SamplerConfig) validate(ruleName string) error {
 		if s.MaxKeys < 0 {
 			return fmt.Errorf("rule %q: max_keys must be non-negative", ruleName)
 		}
+		if s.SharedCounters != nil && s.SharedCounters.Extension == (component.ID{}) {
+			return fmt.Errorf("rule %q: shared_counters.extension is required", ruleName)
+		}
 		switch s.effectiveAlgorithm() {
 		case AlgorithmEMA:
 			if s.Weight < 0 || s.Weight >= 1 {
@@ -467,6 +490,7 @@ func (s *SamplerConfig) validate(ruleName string) error {
 				"max_keys":               true,
 				"adjustment_interval":    true,
 				"weight":                 true,
+				"shared_counters":        true,
 			})
 		case AlgorithmWindowed:
 			if s.UpdateFrequency < 0 {
@@ -482,6 +506,7 @@ func (s *SamplerConfig) validate(ruleName string) error {
 				"max_keys":               true,
 				"update_frequency":       true,
 				"lookback_frequency":     true,
+				"shared_counters":        true,
 			})
 		default:
 			return fmt.Errorf("rule %q: unknown algorithm %q (must be %q or %q)", ruleName, s.Algorithm, AlgorithmEMA, AlgorithmWindowed)
@@ -539,6 +564,9 @@ func (s *SamplerConfig) rejectUnusedFields(ruleName, typeName string, allowed ma
 		return err
 	}
 	if err := set("lookback_frequency", s.LookbackFrequency != 0); err != nil {
+		return err
+	}
+	if err := set("shared_counters", s.SharedCounters != nil); err != nil {
 		return err
 	}
 	return nil
