@@ -45,7 +45,8 @@ func newWindowState(lookbackTicks, maxKeys int) *windowState {
 func (w *windowState) push(bucket map[string]float64) {
 	if old := w.buckets[w.pos]; old != nil {
 		for k := range old {
-			if w.active[k]--; w.active[k] <= 0 {
+			w.active[k]--
+			if w.active[k] <= 0 {
 				delete(w.active, k)
 			}
 		}

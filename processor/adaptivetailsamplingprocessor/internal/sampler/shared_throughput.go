@@ -55,7 +55,7 @@ func (e *windowEngine) interval() time.Duration { return e.update }
 // SharedThroughputConfig configures a throughput sampler whose per-key rates
 // are computed over merged counts from a counter store, so
 // GoalThroughputPerSec is the fleet budget when the store spans instances
-// (and plain per-instance behaviour with the in-memory store).
+// (and plain per-instance behavior with the in-memory store).
 type SharedThroughputConfig struct {
 	GoalThroughputPerSec float64
 	// InitialSamplingRate applies to every key until the first table exists,
