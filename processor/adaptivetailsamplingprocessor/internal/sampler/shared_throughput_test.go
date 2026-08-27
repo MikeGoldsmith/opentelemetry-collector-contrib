@@ -66,7 +66,7 @@ func TestSharedThroughput_TwoInstancesConverge(t *testing.T) {
 
 	// Instance A sees svc-1 heavy, instance B sees svc-2 heavy; the merged
 	// view is identical for both.
-	for i := 0; i < 20; i++ {
+	for range 20 {
 		merged := map[string]float64{"svc-1": 90000, "svc-2": 60000, "svc-3": 300}
 		mergedCopy := map[string]float64{"svc-1": 90000, "svc-2": 60000, "svc-3": 300}
 		a.ApplyMergedCounts(merged)

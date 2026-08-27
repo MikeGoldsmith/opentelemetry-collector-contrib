@@ -5,8 +5,9 @@ package sampler
 
 import (
 	"fmt"
+	"maps"
 	"math"
-	"math/rand"
+	"math/rand/v2"
 	"testing"
 	"time"
 
@@ -23,11 +24,11 @@ import (
 // for goal 10 events/sec over 1s intervals with weight 0.2.
 func TestEMAState_GoldenSparseCounts(t *testing.T) {
 	s := newEMAState(0.2)
-	rng := rand.New(rand.NewSource(1))
+	rng := rand.New(rand.NewPCG(1, 2))
 	var table map[string]int
 	for i := 0; i <= 100; i++ {
 		input := map[string]float64{"largest_count": 40}
-		for j := 0; j < 5; j++ {
+		for range 5 {
 			input[fmt.Sprintf("sporadic-%d-%d", i, rng.Int())] = 1
 		}
 		s.observe(input)
@@ -42,13 +43,13 @@ func TestEMAState_GoldenSparseCounts(t *testing.T) {
 // a steady key converges on its true count.
 func TestEMAState_GoldenAgesOutSmallValues(t *testing.T) {
 	s := newEMAState(0.2)
-	for i := 0; i < 100; i++ {
+	for range 100 {
 		s.observe(map[string]float64{"foo": 500})
 	}
 	require.Len(t, s.movingAverage, 1)
 	assert.Equal(t, float64(500), math.Round(s.movingAverage["foo"]))
 
-	for i := 0; i < 100; i++ {
+	for range 100 {
 		s.observe(map[string]float64{"asdf": 1})
 	}
 	_, found := s.movingAverage["foo"]
@@ -77,11 +78,9 @@ func TestEMAState_RateProperties(t *testing.T) {
 		"huge": 100000, "big": 10000, "mid": 1000, "small": 100, "tiny": 1,
 	}
 	// Feed the same distribution repeatedly so averages converge to it.
-	for i := 0; i < 50; i++ {
+	for range 50 {
 		in := make(map[string]float64, len(counts))
-		for k, v := range counts {
-			in[k] = v
-		}
+		maps.Copy(in, counts)
 		s.observe(in)
 	}
 	const goalPerSec = 100.0
