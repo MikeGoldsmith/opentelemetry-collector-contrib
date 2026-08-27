@@ -12,7 +12,7 @@ import (
 )
 
 func TestSharedThroughput_BootstrapUntilFirstTable(t *testing.T) {
-	s, err := NewSharedThroughput(SharedThroughputConfig{
+	s, err := NewSharedEMAThroughput(SharedThroughputConfig{
 		GoalThroughputPerSec: 100,
 		InitialSamplingRate:  10,
 	})
@@ -28,7 +28,7 @@ func TestSharedThroughput_BootstrapUntilFirstTable(t *testing.T) {
 }
 
 func TestSharedThroughput_SnapshotDrainsCounts(t *testing.T) {
-	s, err := NewSharedThroughput(SharedThroughputConfig{GoalThroughputPerSec: 100})
+	s, err := NewSharedEMAThroughput(SharedThroughputConfig{GoalThroughputPerSec: 100})
 	require.NoError(t, err)
 
 	s.GetSampleRate("svc-a", 3)
@@ -41,7 +41,7 @@ func TestSharedThroughput_SnapshotDrainsCounts(t *testing.T) {
 }
 
 func TestSharedThroughput_EmptyMergedIntervalKeepsTable(t *testing.T) {
-	s, err := NewSharedThroughput(SharedThroughputConfig{GoalThroughputPerSec: 100})
+	s, err := NewSharedEMAThroughput(SharedThroughputConfig{GoalThroughputPerSec: 100})
 	require.NoError(t, err)
 
 	s.ApplyMergedCounts(map[string]float64{"svc-a": 50000})
@@ -54,7 +54,7 @@ func TestSharedThroughput_EmptyMergedIntervalKeepsTable(t *testing.T) {
 // core leaderless property: shared inputs, deterministic computation.
 func TestSharedThroughput_TwoInstancesConverge(t *testing.T) {
 	newS := func() *SharedThroughput {
-		s, err := NewSharedThroughput(SharedThroughputConfig{
+		s, err := NewSharedEMAThroughput(SharedThroughputConfig{
 			GoalThroughputPerSec: 200,
 			AdjustmentInterval:   15 * time.Second,
 			Weight:               0.5,
@@ -80,6 +80,6 @@ func TestSharedThroughput_TwoInstancesConverge(t *testing.T) {
 }
 
 func TestSharedThroughput_InvalidGoal(t *testing.T) {
-	_, err := NewSharedThroughput(SharedThroughputConfig{GoalThroughputPerSec: 0})
+	_, err := NewSharedEMAThroughput(SharedThroughputConfig{GoalThroughputPerSec: 0})
 	assert.Error(t, err)
 }

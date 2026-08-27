@@ -26,11 +26,17 @@ type emaState struct {
 	weight float64
 	// ageOutValue drops keys whose average decays below it, bounding the map.
 	ageOutValue float64
+	// maxKeys bounds the tracked keys; 0 means unbounded. New keys beyond
+	// the cap are dropped at observe time in sorted order, so instances
+	// applying identical merged counts stay in agreement; age-out frees
+	// slots. Keys beyond the cap fall back to the caller's bootstrap rate,
+	// unlike dynsampler's keep-everything overflow (see contrib #50538).
+	maxKeys int
 }
 
 // newEMAState mirrors dynsampler-go's defaults: weight 0.5 when unset, and
 // ageOutValue defaulting to the weight.
-func newEMAState(weight float64) *emaState {
+func newEMAState(weight float64, maxKeys int) *emaState {
 	if weight == 0 {
 		weight = 0.5
 	}
@@ -38,6 +44,7 @@ func newEMAState(weight float64) *emaState {
 		movingAverage: make(map[string]float64),
 		weight:        weight,
 		ageOutValue:   weight,
+		maxKeys:       maxKeys,
 	}
 }
 
@@ -66,7 +73,15 @@ func (s *emaState) observe(counts map[string]float64) {
 		}
 		delete(counts, key)
 	}
+	newKeys := make([]string, 0, len(counts))
 	for key := range counts {
+		newKeys = append(newKeys, key)
+	}
+	sort.Strings(newKeys)
+	for _, key := range newKeys {
+		if s.maxKeys > 0 && len(s.movingAverage) >= s.maxKeys {
+			break
+		}
 		newAvg := adjustAverage(0, counts[key], s.weight)
 		if newAvg >= s.ageOutValue {
 			s.movingAverage[key] = newAvg

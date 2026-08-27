@@ -23,7 +23,7 @@ import (
 // at 40 events/interval among churning single-count keys settles at rate 4
 // for goal 10 events/sec over 1s intervals with weight 0.2.
 func TestEMAState_GoldenSparseCounts(t *testing.T) {
-	s := newEMAState(0.2)
+	s := newEMAState(0.2, 0)
 	rng := rand.New(rand.NewPCG(1, 2))
 	var table map[string]int
 	for i := 0; i <= 100; i++ {
@@ -42,7 +42,7 @@ func TestEMAState_GoldenSparseCounts(t *testing.T) {
 // appearing decays below the age-out threshold and is dropped; the average of
 // a steady key converges on its true count.
 func TestEMAState_GoldenAgesOutSmallValues(t *testing.T) {
-	s := newEMAState(0.2)
+	s := newEMAState(0.2, 0)
 	for range 100 {
 		s.observe(map[string]float64{"foo": 500})
 	}
@@ -61,7 +61,7 @@ func TestEMAState_GoldenAgesOutSmallValues(t *testing.T) {
 // An empty interval must not decay the averages (the library deliberately
 // skips updates when there was no traffic).
 func TestEMAState_EmptyIntervalDoesNotDecay(t *testing.T) {
-	s := newEMAState(0.5)
+	s := newEMAState(0.5, 0)
 	s.observe(map[string]float64{"foo": 100})
 	before := s.movingAverage["foo"]
 	s.observe(map[string]float64{})
@@ -73,7 +73,7 @@ func TestEMAState_EmptyIntervalDoesNotDecay(t *testing.T) {
 // quieter one), and the expected kept volume is close to the goal when the
 // goal is achievable.
 func TestEMAState_RateProperties(t *testing.T) {
-	s := newEMAState(0.5)
+	s := newEMAState(0.5, 0)
 	counts := map[string]float64{
 		"huge": 100000, "big": 10000, "mid": 1000, "small": 100, "tiny": 1,
 	}
