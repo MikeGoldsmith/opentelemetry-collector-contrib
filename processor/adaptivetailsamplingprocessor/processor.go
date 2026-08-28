@@ -318,6 +318,7 @@ func (p *adaptiveTailSamplingProcessor) Start(_ context.Context, host component.
 		name    string
 		sampler *sampler.SharedThroughput
 		store   counterstore.Store
+		timeout time.Duration
 	}
 	var targets []syncTarget
 	for i, r := range p.rules {
@@ -325,11 +326,16 @@ func (p *adaptiveTailSamplingProcessor) Start(_ context.Context, host component.
 		if !ok {
 			continue
 		}
-		store, err := resolveCounterStore(host, p.cfg.Rules[i].Sampler.SharedCounters)
+		shared := p.cfg.Rules[i].Sampler.SharedCounters
+		store, err := resolveCounterStore(host, shared)
 		if err != nil {
 			return fmt.Errorf("rule %q: %w", r.name, err)
 		}
-		targets = append(targets, syncTarget{name: r.name, sampler: st, store: store})
+		var timeout time.Duration
+		if shared != nil {
+			timeout = shared.SyncTimeout
+		}
+		targets = append(targets, syncTarget{name: r.name, sampler: st, store: store, timeout: timeout})
 	}
 	if len(targets) == 0 {
 		return nil
@@ -339,7 +345,7 @@ func (p *adaptiveTailSamplingProcessor) Start(_ context.Context, host component.
 	p.syncCancel = cancel
 	for _, t := range targets {
 		p.syncWG.Add(1)
-		go p.runCounterSync(ctx, t.name, t.sampler, t.store)
+		go p.runCounterSync(ctx, t.name, t.sampler, t.store, t.timeout)
 	}
 	return nil
 }

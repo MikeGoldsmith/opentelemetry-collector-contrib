@@ -294,6 +294,14 @@ type SharedCountersConfig struct {
 	// counts to and read merged counts from. The extension must implement the
 	// counter-store interface (AddCounts/ReadCounts). Required.
 	Extension component.ID `mapstructure:"extension"`
+	// SyncTimeout bounds each store round-trip (publish and read) per interval
+	// tick. A call that exceeds it is abandoned and treated as a failure,
+	// failing open to this instance's own counts, so a store that cannot keep
+	// up with the traffic it is meant to control degrades responsiveness by a
+	// bounded amount instead of stalling the sync loop. Should be set well
+	// under the sampler's adjustment interval. 0 (or omitting the field) uses
+	// half the effective interval.
+	SyncTimeout time.Duration `mapstructure:"sync_timeout"`
 	// prevent unkeyed literal initialization
 	_ struct{}
 }
@@ -475,8 +483,13 @@ func (s *SamplerConfig) validate(ruleName string) error {
 		if s.MaxKeys < 0 {
 			return fmt.Errorf("rule %q: max_keys must be non-negative", ruleName)
 		}
-		if s.SharedCounters != nil && s.SharedCounters.Extension == (component.ID{}) {
-			return fmt.Errorf("rule %q: shared_counters.extension is required", ruleName)
+		if s.SharedCounters != nil {
+			if s.SharedCounters.Extension == (component.ID{}) {
+				return fmt.Errorf("rule %q: shared_counters.extension is required", ruleName)
+			}
+			if s.SharedCounters.SyncTimeout < 0 {
+				return fmt.Errorf("rule %q: shared_counters.sync_timeout must be non-negative", ruleName)
+			}
 		}
 		switch s.effectiveAlgorithm() {
 		case AlgorithmEMA:

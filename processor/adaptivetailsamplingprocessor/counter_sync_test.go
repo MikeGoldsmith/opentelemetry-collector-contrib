@@ -172,7 +172,7 @@ func TestSyncCounters_AppliesMergedCounts(t *testing.T) {
 	st.GetSampleRate("svc-a", 500000)
 	require.Equal(t, 10, st.GetSampleRate("svc-a", 1), "bootstrap rate before the first sync")
 
-	p.syncCounters(t.Context(), time.Unix(3600, 0), "default", st, store)
+	p.syncCounters(t.Context(), time.Unix(3600, 0), "default", st, store, time.Second)
 	assert.NotEqual(t, 10, st.GetSampleRate("svc-a", 1), "sync must apply a computed table")
 }
 
@@ -197,8 +197,8 @@ func TestSyncCounters_MergesAcrossInstances(t *testing.T) {
 	// publish/read interleaving (which real instances race on).
 	require.NoError(t, store.AddCounts(t.Context(), "default", 0, a.SnapshotCounts()))
 	require.NoError(t, store.AddCounts(t.Context(), "default", 0, b.SnapshotCounts()))
-	pa.syncCounters(t.Context(), tick, "default", a, store)
-	pa.syncCounters(t.Context(), tick, "default", b, store)
+	pa.syncCounters(t.Context(), tick, "default", a, store, time.Second)
+	pa.syncCounters(t.Context(), tick, "default", b, store, time.Second)
 
 	for _, key := range []string{"svc-a", "svc-b"} {
 		assert.Equal(t, a.GetSampleRate(key, 1), b.GetSampleRate(key, 1),
@@ -248,10 +248,82 @@ func TestSyncCounters_FailsOpenOnStoreErrors(t *testing.T) {
 			st := p.rules[0].sampler.(*sampler.SharedThroughput)
 
 			st.GetSampleRate("svc-a", 500000)
-			p.syncCounters(t.Context(), time.Unix(3600, 0), "default", st, tc.store)
+			p.syncCounters(t.Context(), time.Unix(3600, 0), "default", st, tc.store, time.Second)
 
 			assert.NotEqual(t, 10, st.GetSampleRate("svc-a", 1),
 				"store failure must fail open: local counts still produce a table")
+			metadatatest.AssertEqualProcessorAdaptiveTailSamplingCounterSyncErrors(t, tt,
+				[]metricdata.DataPoint[int64]{{
+					Value: 1,
+					Attributes: attribute.NewSet(
+						attribute.String("rule", "default"),
+						attribute.String("op", tc.op),
+					),
+				}},
+				metricdatatest.IgnoreTimestamp(),
+				metricdatatest.IgnoreExemplars(),
+			)
+		})
+	}
+}
+
+// blockingStore hangs on the chosen operation until its context is cancelled,
+// standing in for a store slower than the sync timeout.
+type blockingStore struct {
+	blockAdd  bool
+	blockRead bool
+	inner     *counterstore.Memory
+}
+
+func (s *blockingStore) AddCounts(ctx context.Context, samplerID string, bucket int64, counts map[string]float64) error {
+	if s.blockAdd {
+		<-ctx.Done()
+		return ctx.Err()
+	}
+	return s.inner.AddCounts(ctx, samplerID, bucket, counts)
+}
+
+func (s *blockingStore) ReadCounts(ctx context.Context, samplerID string, bucket int64) (map[string]float64, error) {
+	if s.blockRead {
+		<-ctx.Done()
+		return nil, ctx.Err()
+	}
+	return s.inner.ReadCounts(ctx, samplerID, bucket)
+}
+
+func TestSyncCounters_TimeoutFailsOpen(t *testing.T) {
+	for _, tc := range []struct {
+		name  string
+		store *blockingStore
+		op    string
+	}{
+		{name: "add times out", store: &blockingStore{blockAdd: true, inner: counterstore.NewMemory()}, op: "add"},
+		{name: "read times out", store: &blockingStore{blockRead: true, inner: counterstore.NewMemory()}, op: "read"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			tt := componenttest.NewTelemetry()
+			t.Cleanup(func() {
+				require.NoError(t, tt.Shutdown(context.Background())) //nolint:usetesting // cleanup after ctx cancel
+			})
+			p, err := newProcessor(metadatatest.NewSettings(tt), throughputTestConfig(nil), &consumertest.TracesSink{})
+			require.NoError(t, err)
+			st := p.rules[0].sampler.(*sampler.SharedThroughput)
+
+			st.GetSampleRate("svc-a", 500000)
+			done := make(chan struct{})
+			go func() {
+				// A hung store must not stall the caller past the timeout.
+				p.syncCounters(t.Context(), time.Unix(3600, 0), "default", st, tc.store, 20*time.Millisecond)
+				close(done)
+			}()
+			select {
+			case <-done:
+			case <-time.After(2 * time.Second):
+				t.Fatal("syncCounters did not return; timeout was not enforced")
+			}
+
+			assert.NotEqual(t, 10, st.GetSampleRate("svc-a", 1),
+				"a store that times out must fail open to local counts")
 			metadatatest.AssertEqualProcessorAdaptiveTailSamplingCounterSyncErrors(t, tt,
 				[]metricdata.DataPoint[int64]{{
 					Value: 1,

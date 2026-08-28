@@ -317,6 +317,19 @@ func TestConfig_Validate(t *testing.T) {
 			}),
 		},
 		{
+			name: "shared_counters_negative_sync_timeout",
+			cfg: baseCfg(RuleConfig{
+				Name: "r",
+				Sampler: SamplerConfig{
+					Type:                  AdaptiveThroughput,
+					GoalThroughput:        100,
+					FingerprintAttributes: []string{`resource.attributes["service.name"]`},
+					SharedCounters:        &SharedCountersConfig{Extension: component.MustNewID("redis_sampler_state"), SyncTimeout: -time.Second},
+				},
+			}),
+			wantErr: "shared_counters.sync_timeout must be non-negative",
+		},
+		{
 			name: "shared_counters_missing_extension",
 			cfg: baseCfg(RuleConfig{
 				Name: "r",

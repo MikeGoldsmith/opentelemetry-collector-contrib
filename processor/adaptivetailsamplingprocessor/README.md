@@ -357,6 +357,7 @@ sampler:
     - resource.attributes["service.name"]
   shared_counters:
     extension: my_sampler_state           # component ID of a sampler-state extension
+    sync_timeout: 5s                      # per round-trip bound; 0 or omitted = half the interval
 ```
 
 The named extension must implement the counter-store contract
@@ -366,10 +367,13 @@ same rule name, goal, algorithm, and intervals, since each instance recomputes
 rates from the merged counts independently.
 
 Store I/O happens once per adjustment interval on a background goroutine,
-never on the span-processing path. Store failures fail open: the sampler
-applies its own counts for that interval (per-instance behavior against the
-full goal, which over-samples fleet-wide) rather than stalling, logs a
-warning, and increments
+never on the span-processing path. Each round-trip is bounded by
+`sync_timeout` (default: half the effective interval), so a store slower than
+the interval, likely the moment a traffic burst is loading it, is abandoned
+rather than stalling the loop. Store failures and timeouts both fail open: the
+sampler applies its own counts for that interval (per-instance behavior
+against the full goal, which over-samples fleet-wide) rather than stalling,
+logs a warning, and increments
 `otelcol_processor_adaptive_tail_sampling_counter_sync_errors`.
 
 When `shared_counters` is unset, counts stay in process and behavior is

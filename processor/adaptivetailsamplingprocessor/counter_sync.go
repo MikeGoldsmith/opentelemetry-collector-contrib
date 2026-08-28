@@ -21,9 +21,14 @@ import (
 // Ticks are aligned to wall-clock interval boundaries so instances sharing a
 // store address the same bucket for the same time period and publish at
 // roughly the same moment.
-func (p *adaptiveTailSamplingProcessor) runCounterSync(ctx context.Context, name string, st *sampler.SharedThroughput, store counterstore.Store) {
+func (p *adaptiveTailSamplingProcessor) runCounterSync(ctx context.Context, name string, st *sampler.SharedThroughput, store counterstore.Store, timeout time.Duration) {
 	defer p.syncWG.Done()
 	interval := st.Interval()
+	if timeout <= 0 {
+		// Default to half the interval: short enough that a stuck store cannot
+		// eat a whole tick, long enough to tolerate normal store latency.
+		timeout = interval / 2
+	}
 	timer := time.NewTimer(time.Until(nextBoundary(time.Now(), interval)))
 	defer timer.Stop()
 	for {
@@ -31,7 +36,7 @@ func (p *adaptiveTailSamplingProcessor) runCounterSync(ctx context.Context, name
 		case <-ctx.Done():
 			return
 		case now := <-timer.C:
-			p.syncCounters(ctx, now, name, st, store)
+			p.syncCounters(ctx, now, name, st, store, timeout)
 			timer.Reset(time.Until(nextBoundary(time.Now(), interval)))
 		}
 	}
@@ -50,28 +55,44 @@ func nextBoundary(now time.Time, interval time.Duration) time.Time {
 //
 // Store failures fail open: the local counts are applied instead, degrading
 // to per-instance rates against the full goal (over-sampling across the
-// fleet) rather than stalling the sampler. The decide path never touches the
+// fleet) rather than stalling the sampler. Each store call is bounded by
+// timeout, so a store slower than the interval routes into the same fail-open
+// path rather than blocking the loop. The decide path never touches the
 // store, so it is unaffected either way.
-func (p *adaptiveTailSamplingProcessor) syncCounters(ctx context.Context, now time.Time, name string, st *sampler.SharedThroughput, store counterstore.Store) {
+func (p *adaptiveTailSamplingProcessor) syncCounters(ctx context.Context, now time.Time, name string, st *sampler.SharedThroughput, store counterstore.Store, timeout time.Duration) {
 	interval := st.Interval()
 	// The tick fires at (or just after) a bucket boundary; stepping back half
 	// an interval indexes the bucket that just completed.
 	bucket := now.Add(-interval/2).UnixNano() / interval.Nanoseconds()
 	counts := st.SnapshotCounts()
 	if len(counts) > 0 {
-		if err := store.AddCounts(ctx, name, bucket, counts); err != nil {
+		if err := p.withTimeout(ctx, timeout, func(cctx context.Context) error {
+			return store.AddCounts(cctx, name, bucket, counts)
+		}); err != nil {
 			p.recordCounterSyncError(ctx, name, "add", err)
 			st.ApplyMergedCounts(counts)
 			return
 		}
 	}
-	merged, err := store.ReadCounts(ctx, name, bucket)
-	if err != nil {
+	var merged map[string]float64
+	if err := p.withTimeout(ctx, timeout, func(cctx context.Context) error {
+		var err error
+		merged, err = store.ReadCounts(cctx, name, bucket)
+		return err
+	}); err != nil {
 		p.recordCounterSyncError(ctx, name, "read", err)
 		st.ApplyMergedCounts(counts)
 		return
 	}
 	st.ApplyMergedCounts(merged)
+}
+
+// withTimeout runs fn under a child context bounded by timeout so a slow store
+// call is abandoned rather than stalling the sync loop.
+func (*adaptiveTailSamplingProcessor) withTimeout(ctx context.Context, timeout time.Duration, fn func(context.Context) error) error {
+	cctx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+	return fn(cctx)
 }
 
 func (p *adaptiveTailSamplingProcessor) recordCounterSyncError(ctx context.Context, name, op string, err error) {
